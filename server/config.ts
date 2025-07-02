@@ -6,6 +6,5 @@ export const config = {
       secretAccessKey: String(process.env.AWS_SECRET),
     },
     bucket: String(process.env.AWS_BUCKET),
-    endpoint: String(process.env.AWS_ENDPOINT),
   },
 }

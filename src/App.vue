@@ -13,7 +13,6 @@
 import { Dashboard } from '@uppy/vue'
 import Uppy from '@uppy/core'
 import AwsS3 from '@uppy/aws-s3'
-
 import '@uppy/core/dist/style.min.css'
 import '@uppy/dashboard/dist/style.min.css'
 import '@uppy/drag-drop/dist/style.min.css'

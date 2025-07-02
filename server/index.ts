@@ -87,9 +87,9 @@ app.post('/s3/sign', async (c) => {
 
 // start a multipart upload
 app.post('/s3/multipart', async (c) => {
-  const { contentType, metadata, filename } = await c.req.json()
+  const { type, metadata, filename } = await c.req.json()
 
-  if (typeof contentType !== 'string') {
+  if (typeof type !== 'string') {
     return c.json(
       {
         message: 'Invalid type format',
@@ -118,7 +118,11 @@ app.post('/s3/multipart', async (c) => {
   }
 
   try {
-    const { key, uploadId } = await S3.createMultipartUpload({ filename, contentType, metadata })
+    const { key, uploadId } = await S3.createMultipartUpload({
+      filename,
+      contentType: type,
+      metadata,
+    })
     return c.json({
       message: 'Multipart upload started successfully',
       uploadId,
@@ -263,10 +267,10 @@ app.post('/s3/multipart/:uploadId/complete', async (c) => {
   }
 
   try {
-    const url = await S3.completeMultipartUpload({ uploadId, key, parts: body.parts })
+    const location = await S3.completeMultipartUpload({ uploadId, key, parts: body.parts })
     return c.json({
       message: 'Multipart upload completed successfully',
-      url,
+      location,
     })
   } catch (error) {
     console.error('Error completing multipart upload:', error)
@@ -279,4 +283,43 @@ app.post('/s3/multipart/:uploadId/complete', async (c) => {
   }
 })
 
+app.delete('/s3/multipart/:uploadId', async (c) => {
+  const { uploadId } = c.req.param()
+  const { key } = c.req.query()
+
+  if (typeof uploadId !== 'string') {
+    return c.json(
+      {
+        message: 's3: invalid uploadId. Must be part of url params: "/s3/multipart/<uploadId>"',
+      },
+      400,
+    )
+  }
+
+  if (typeof key !== 'string') {
+    return c.json(
+      {
+        message:
+          's3: the object key must be passed as a query parameter. For example: "?key=abc.jpg"',
+      },
+      400,
+    )
+  }
+
+  try {
+    await S3.abortMultipartUpload({ uploadId, key })
+    return c.json({
+      message: 'Multipart upload aborted successfully',
+    })
+  } catch (error) {
+    console.error('Error aborting multipart upload:', error)
+    return c.json(
+      {
+        message: 'Error aborting multipart upload',
+      },
+      500,
+    )
+  }
+})
+import { generateS3Key } from './s3-utils'
 export default app

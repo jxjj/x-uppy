@@ -7,6 +7,7 @@ import {
   Part,
   ListPartsCommandOutput,
   CompleteMultipartUploadCommand,
+  AbortMultipartUploadCommand,
 } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { config } from './config'
@@ -178,4 +179,22 @@ export async function listUploadParts({ uploadId, key }: { uploadId: string; key
   }
 
   return parts
+}
+
+export async function abortMultipartUpload({ uploadId, key }: { uploadId: string; key: string }) {
+  const command = new AbortMultipartUploadCommand({
+    Bucket: config.aws.bucket,
+    Key: key,
+    UploadId: uploadId,
+  })
+
+  return s3Client
+    .send(command)
+    .then(() => ({
+      message: 'Multipart upload aborted successfully',
+    }))
+    .catch((error) => {
+      console.error('Error aborting multipart upload:', error)
+      throw new Error('Multipart upload abort failed')
+    })
 }

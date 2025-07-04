@@ -4,11 +4,13 @@ Experimenting with Uppy client and s3 uploading.
 
 ```
 # Install deps
-bun install
+npm install
 
 # Start the dev server
-bun dev
+npm run dev
 
 # start the backend, which acts like companion
-bun server:watch
+npm run server:watch
 ```
+
+Then open http://localhost:5173 in your browser.

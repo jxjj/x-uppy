@@ -56,7 +56,7 @@ export async function getMultipartUploadPresignedUrl({
     Key: key,
     UploadId: uploadId,
     PartNumber: partNumber,
-    // Body: ''
+    Body: '',
   })
 
   return getSignedUrl(s3Client, command, { expiresIn: 3600 })
@@ -143,6 +143,12 @@ export async function completeMultipartUpload({
   key: string
   parts: Part[]
 }) {
+  // verify that parts have a part number and etag otherwise
+  // aws will give an malformed XML error
+  if (!parts.every((part) => part.PartNumber && part.ETag)) {
+    throw new Error('All parts must have a PartNumber and ETag')
+  }
+
   // Implementation for completing a multipart upload
   // This function should take the uploadId and parts to complete the upload
   const command = new CompleteMultipartUploadCommand({
@@ -154,9 +160,13 @@ export async function completeMultipartUpload({
     },
   })
 
-  const res = await s3Client.send(command)
-
-  return res.Location
+  try {
+    const res = await s3Client.send(command)
+    return res.Location
+  } catch (error) {
+    console.error('Error completing multipart upload:', error)
+    throw new Error('Multipart upload completion failed')
+  }
 }
 
 export async function listUploadParts({ uploadId, key }: { uploadId: string; key: string }) {

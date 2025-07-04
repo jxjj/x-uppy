@@ -175,7 +175,7 @@ app.get('/s3/multipart/:uploadId/:partNumber', async (c) => {
   }
 
   try {
-    const { url } = await S3.getMultipartUploadPresignedUrl({
+    const { url, method } = await S3.getMultipartUploadPresignedUrl({
       key,
       uploadId,
       partNumber: partNumInt,
@@ -183,7 +183,7 @@ app.get('/s3/multipart/:uploadId/:partNumber', async (c) => {
     return c.json({
       message: 'Multipart upload part presigned URL created successfully',
       url,
-      method: 'PUT',
+      method,
     })
   } catch (error) {
     console.error('Error creating multipart upload part presigned URL:', error)
@@ -266,8 +266,33 @@ app.post('/s3/multipart/:uploadId/complete', async (c) => {
     )
   }
 
+  // get a list of parts from s3
+  // AWS recommends keeping track of parts and eTags on the client side,
+  // but to do this, we need to change CORS on the S3 bucket to expose the ETag
+  // header. And, we don't want to make that setting change for reasons.
+  // THUS: we'll fetch the parts from S3 to complete the multipart upload.
+  const s3Parts = await S3.listUploadParts({ uploadId, key })
+
+  console.log('Parts to complete:', s3Parts)
+
+  // TODO: check s3Parts match the body.parts
+  const allPartsMatch = s3Parts.every((s3part, index) => {
+    return s3part.PartNumber === body.parts[index].PartNumber
+  })
+
+  if (!allPartsMatch) {
+    return c.json(
+      {
+        message: 's3: parts do not match the parts in the multipart upload.',
+        s3Parts,
+        clientParts: body.parts,
+      },
+      400,
+    )
+  }
+
   try {
-    const location = await S3.completeMultipartUpload({ uploadId, key, parts: body.parts })
+    const location = await S3.completeMultipartUpload({ uploadId, key, parts: s3Parts })
     return c.json({
       message: 'Multipart upload completed successfully',
       location,
@@ -321,5 +346,5 @@ app.delete('/s3/multipart/:uploadId', async (c) => {
     )
   }
 })
-import { generateS3Key } from './s3-utils'
+
 export default app

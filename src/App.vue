@@ -12,14 +12,14 @@
 <script setup lang="ts">
 import { Dashboard } from '@uppy/vue'
 import Uppy from '@uppy/core'
-import AwsS3 from '@uppy/aws-s3'
+import umnAwsS3 from '@umn-cla/uppy-aws-s3'
 import '@uppy/core/dist/style.min.css'
 import '@uppy/dashboard/dist/style.min.css'
 import '@uppy/drag-drop/dist/style.min.css'
 import '@uppy/status-bar/dist/style.min.css'
 import '@uppy/progress-bar/dist/style.min.css'
 
-const uppy = new Uppy().use(AwsS3, {
+const uppy = new Uppy().use(umnAwsS3, {
   endpoint: 'http://localhost:3000',
   shouldUseMultipart: true,
 })
